@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropAid - Plant Disease Detection</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background-color: #1e7e34;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+        }
+
+        .navbar-brand img {
+            height: 40px;
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #fff;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, .05);
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #28a745;
+        }
+
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .footer a:hover {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='img/logo_512.png') }}" alt="CropAid Logo" class="me-2">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works"><i class="fas fa-info-circle"></i> How It Works</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1>Plant Disease Detection</h1>
+            <p class="lead">Upload a leaf image and get instant disease diagnosis with AI-powered analysis</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="row justify-content-center mb-3">
+            <div class="col-md-8">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- API Key Configuration -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-key"></i> Gemini API Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/set_api_key" method="post" class="mb-2">
+                            <div class="mb-3">
+                                <label for="api_key" class="form-label">API Key</label>
+                                <div class="input-group">
+                                    <input type="password" id="api_key" name="api_key" class="form-control"
+                                        placeholder="Enter your Gemini API key" value="{{ api_key }}">
+                                    <button type="button" class="btn btn-outline-secondary" id="toggle-api-key">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                                <small class="text-muted">Required for detailed disease information</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="model_id" class="form-label">Gemini Model</label>
+                                <select name="model_id" id="model_id" class="form-select">
+                                    {% for model in models %}
+                                    <option value="{{ model.id }}" {% if model.id==selected_model %}selected{% endif %}>
+                                        {{ model.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Select the model that fits your needs</small>
+                            </div>
+                        </form>
+                        {% if api_key %}
+                        <form action="/clear_api_key" method="post" class="text-end">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-trash-alt"></i> Clear Key
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-leaf"></i> Upload Plant Image</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/predict" method="post" enctype="multipart/form-data" id="upload-form">
+                            <input type="hidden" name="api_key" value="{{ api_key }}">
+
+                            <div class="mb-4">
+                                <div class="upload-area" id="upload-area">
+                                    <img id="preview-image" class="img-preview d-none img-fluid mb-3">
+                                    <div id="upload-prompt">
+                                        <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted"></i>
+                                        <p>Drag & drop an image or click to browse</p>
+                                        <small class="text-muted d-block">Supported formats: JPG, JPEG, PNG (Max size:
+                                            16MB)</small>
+                                    </div>
+                                </div>
+                                <input type="file" name="file" id="file-input" accept=".jpg, .jpeg, .png"
+                                    class="d-none">
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="use_gemini" id="use_gemini" {% if
+                                    api_key %}checked{% else %}disabled{% endif %}>
+                                <label class="form-check-label" for="use_gemini">
+                                    Get detailed disease information using Gemini AI
+                                </label>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-success btn-lg px-4" id="submit-btn" disabled>
+                                    <i class="fas fa-search"></i> Analyze Image
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works Section -->
+        <div class="row mt-4" id="how-it-works">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> How It Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3">
+                                    <i class="fas fa-upload fa-3x mb-3 text-success"></i>
+                                    <h5>Upload</h5>
+                                    <p>Take a clear photo of the plant leaf and upload it to our system</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3">
+                                    <i class="fas fa-robot fa-3x mb-3 text-success"></i>
+                                    <h5>Analyze</h5>
+                                    <p>Our AI model analyzes the image to identify diseases with high accuracy</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3">
+                                    <i class="fas fa-clipboard-list fa-3x mb-3 text-success"></i>
+                                    <h5>Results</h5>
+                                    <p>Get detailed diagnosis and treatment recommendations</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>CropAid</h5>
+                    <p>Plant disease detection using machine learning</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2025 CropAid. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

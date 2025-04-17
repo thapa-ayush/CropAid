@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropAid - Detection Results</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background-color: #fff !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+            padding: 10px 0;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            color: #2e7d32 !important;
+        }
+
+        .nav-link {
+            color: #2e7d32 !important;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: #1b5e20 !important;
+        }
+
+        .hero-section {
+            background-image: url('{{ url_for("static", filename="img/background.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            padding: 60px 0;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Overlay for better text readability */
+        .hero-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+
+        .hero-section .container {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-section h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .hero-section p {
+            font-size: 18px;
+            margin-bottom: 0;
+        }
+
+        .diagnosis-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .diagnosis-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .diagnosis-title i {
+            margin-right: 8px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .diagnosis-result {
+            background-color: #fff8e1;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .diagnosis-result.healthy {
+            background-color: #e8f5e9;
+        }
+
+        .diagnosis-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .confidence-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .confidence-container {
+            position: relative;
+            height: 20px;
+            border-radius: 10px;
+            background-color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .confidence-bar-bg {
+            width: 100%;
+            height: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .confidence-bar-fill.healthy {
+            background-color: #4caf50;
+        }
+
+        .confidence-bar-fill.disease {
+            background-color: #ffc107;
+        }
+
+        .info-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .info-title i {
+            margin-right: 8px;
+        }
+
+        .info-content {
+            line-height: 1.6;
+        }
+
+        .action-button {
+            background-color: #1e7e34;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 500;
+            margin-top: 20px;
+        }
+
+        .action-button:hover {
+            background-color: #157347;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='img/logo_512.png') }}" alt="CropAid Logo" class="me-2">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#how-it-works"><i class="fas fa-info-circle"></i> How It Works</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container text-center">
+            <h1>Detection Results</h1>
+            <p class="lead">Analysis of your plant image</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Diagnosis Section -->
+        <div class="diagnosis-section">
+            <h2 class="diagnosis-title"><i class="fas fa-leaf"></i> Diagnosis</h2>
+            <div class="row">
+                <div class="col-md-5 mb-4">
+                    <img src="{{ url_for('static', filename='uploads/' + image_path) }}" alt="Uploaded Plant Image"
+                        class="result-image">
+                </div>
+                <div class="col-md-7">
+                    <div class="diagnosis-result {% if 'healthy' in result.class.lower() %}healthy{% endif %}">
+                        <h3 class="diagnosis-name">{{ result.class }}</h3>
+                        <p class="confidence-label">Confidence Level:</p>
+                        <div class="confidence-container mb-4">
+                            <div class="confidence-bar-bg">
+                                <div class="confidence-bar-fill {% if 'healthy' in result.class.lower() %}healthy{% else %}disease{% endif %}"
+                                    id="confidence-bar" style="width: 0%">
+                                    <span class="confidence-value">{{ result.confidence }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Display cause and cure information from plant_disease.json -->
+                        <div class="mt-4">
+                            <div class="cause-item">
+                                <h5 class="mb-2"><i class="fas fa-seedling me-2"></i>Cause:</h5>
+                                <p>{{ result.cause }}</p>
+                            </div>
+
+                            <div class="treatment-item mt-3">
+                                <h5 class="mb-2"><i class="fas fa-first-aid me-2"></i>Treatment:</h5>
+                                <p>{{ result.cure }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if result.disease_info %}
+        <!-- About This Condition Section -->
+        <div class="info-section">
+            <h2 class="info-title"><i class="fas fa-info-circle"></i> About This Condition</h2>
+            <div class="info-content">
+                {{ result.disease_info | safe }}
+            </div>
+        </div>
+
+        <!-- Prevention & Treatment Tips Section -->
+        <div class="info-section">
+            <h2 class="info-title"><i class="fas fa-medkit"></i> Prevention & Treatment Tips</h2>
+            <div class="info-content">
+                {% if result.prevention_tips %}
+                <div class="prevention-tips">
+                    {{ result.prevention_tips | format_prevention_tips | safe }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="info-section">
+            <h2 class="info-title"><i class="fas fa-info-circle"></i> Want Detailed Information?</h2>
+            <p>Add your Gemini API key in the home page to get detailed information about this condition and prevention
+                tips.</p>
+            <a href="/" class="btn btn-outline-primary">Add API Key</a>
+        </div>
+        {% endif %}
+
+        <!-- Action Button -->
+        <div class="text-center mb-5">
+            <a href="/" class="btn action-button">
+                <i class="fas fa-arrow-left me-2"></i> Analyze Another Plant
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>CropAid</h5>
+                    <p>Plant disease detection using machine learning</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2025 CropAid. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set the width of the confidence bar after page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            const confidenceBar = document.getElementById('confidence-bar');
+            const confidenceValue = "{{ result.confidence.replace('%', '') }}";
+
+            if (confidenceBar && confidenceValue) {
+                // Make sure we have a valid number
+                const numValue = parseFloat(confidenceValue);
+                if (!isNaN(numValue)) {
+                    // Set minimum width for visibility
+                    confidenceBar.style.width = Math.max(numValue, 5) + '%';
+                    confidenceBar.textContent = numValue.toFixed(2) + '%';
+                } else {
+                    // Fallback for non-numeric values
+                    confidenceBar.style.width = '100%';
+                    confidenceBar.textContent = 'N/A';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
